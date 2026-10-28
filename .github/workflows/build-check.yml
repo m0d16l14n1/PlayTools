@@ -1,0 +1,40 @@
+name: Build check
+
+# Compiles PlayTools for Mac Catalyst with several Xcode / macOS versions.
+# macOS 27 / Xcode 27 is not offered by GitHub-hosted runners yet: add a matrix entry
+# (runner: macos-27, xcode: "27.x") once it is, or run this on a self-hosted macOS 27 runner.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS 15 Sequoia / Xcode 16.4
+            runner: macos-15
+            xcode: "16.4"
+          - name: macOS 26 Tahoe / Xcode 26.6
+            runner: macos-26
+            xcode: "26.6"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select -s "/Applications/Xcode_${{ matrix.xcode }}.app"
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Build PlayTools (Mac Catalyst)
+        run: |
+          set -o pipefail
+          xcodebuild -scheme PlayTools -configuration Release \
+            -destination 'generic/platform=macOS,variant=Mac Catalyst' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 50

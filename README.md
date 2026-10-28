@@ -14,7 +14,9 @@ PlayTools allows you to control:
 - Display Orientation: Supports manually rotating the game window during game play.
 - Application type (most useful case is changing to type `game` and the type reflects in screen time usage)
 - Custom discord activity
-- Device type
+- Device type: iPad Pro 12.9" (1st, 3rd, 5th, 6th gen), iPad Pro 13" (M4, M5), iPhone 13–16 Pro Max,
+  iPhone 17, iPhone Air, iPhone 17 Pro and iPhone 17 Pro Max. The machine identifier (`hw.machine`, `uname`) and
+  board ID (`hw.target`) are both reported; board IDs live in `PlaySettings.oemID`
 
 ## Key Mapping
 
@@ -70,7 +72,22 @@ PlayTools uses swizzle techniques to replace framework methods and system calls 
 
 # How to Build
 
-PlayTools is built using Xcode.
+PlayTools is built using Xcode. It builds with Xcode 16 (macOS 15), Xcode 26 (macOS 26 Tahoe) and Xcode 27
+(macOS 27); SwiftLint must be installed (`brew install swiftlint`). To build the framework on its own:
+
+```sh
+xcodebuild -scheme PlayTools -configuration Release \
+  -destination 'generic/platform=macOS,variant=Mac Catalyst' CODE_SIGNING_ALLOWED=NO build
+```
+
+The `Build check` workflow builds it with Xcode 16.4 and 26.6 on every push.
+
+## Adding an iOS device
+
+1. Add the machine identifier and its board ID (`boardconfig` from `https://api.ipsw.me/v4/device/<identifier>`)
+   to `oemID` in `PlayTools/PlaySettings.swift`.
+2. In PlayCover, add the device to `IOSDevice.all` in `PlayCover/Model/IOSDevice.swift`. The settings picker and the
+   `playcover devices` / `--device` CLI use that list.
 
 ## Production Build
 In release builds, the building script of PlayCover will automatically fetch the latest version of PlayTools from the official repository and build it. Generally, you do not need to build PlayTools manually.
