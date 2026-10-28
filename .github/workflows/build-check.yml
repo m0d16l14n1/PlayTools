@@ -33,8 +33,10 @@ jobs:
         run: brew install swiftlint
 
       - name: Build PlayTools (Mac Catalyst)
+        # DerivedData lives outside the checkout so the SwiftLint build phase does not lint package sources
         run: |
-          set -o pipefail
           xcodebuild -scheme PlayTools -configuration Release \
-            -destination 'generic/platform=macOS,variant=Mac Catalyst' -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO build | tail -n 50
+            -destination 'generic/platform=macOS,variant=Mac Catalyst' -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" 2>&1 \
+            || { grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u; tail -n 40 "$RUNNER_TEMP/build.log"; exit 1; }
+          tail -n 5 "$RUNNER_TEMP/build.log"
