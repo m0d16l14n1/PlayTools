@@ -22,6 +22,10 @@ jobs:
           - name: macOS 26 Tahoe / Xcode 26.6
             runner: macos-26
             xcode: "26.6"
+          # Tahoe SDK on the macos-15 image, which also ships Xcode 26 and is usually easier to get a runner for
+          - name: macOS 26 SDK / Xcode 26.3 (macos-15 runner)
+            runner: macos-15
+            xcode: "26.3"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
