@@ -68,7 +68,9 @@ enum AutomationCommands {
                 "width": window.bounds.width, "height": window.bounds.height, "scale": window.screen.scale,
                 "number": window.nsWindow?.value(forKey: "windowNumber") as? Int ?? 0
             ]
-            result["focused"] = firstResponder(in: window).map { String(describing: type(of: $0)) } ?? NSNull()
+            if let focused = firstResponder(in: window) {
+                result["focused"] = String(describing: type(of: focused))
+            }
         }
         return result
     }
@@ -76,105 +78,21 @@ enum AutomationCommands {
     // MARK: - Inspection
     private static func tree(_ args: [String: Any]) throws -> [String: Any] {
         let window = try mainWindow()
-        let options = TreeOptions(args)
-        return ["ok": true, "root": describe(window, in: window, path: "0", depth: 0, options: options) ?? [:]]
+        let options = AutomationTree.Options(args)
+        return ["ok": true, "root": AutomationTree.describe(window, in: window, path: "0", depth: 0,
+                                                            options: options) ?? [:]]
     }
 
     private static func find(_ args: [String: Any]) throws -> [String: Any] {
         let window = try mainWindow()
         let query = ElementQuery(args)
         var matches: [[String: Any]] = []
-        walk(window, in: window, path: "0") { view, path in
-            if query.matches(view, in: window, path: path) {
-                var element = summary(of: view, in: window)
-                element["path"] = path
-                matches.append(element)
+        AutomationTree.walk(window, in: window, path: "0") { summary in
+            if query.matches(summary) {
+                matches.append(summary)
             }
         }
         return ["ok": true, "matches": matches]
-    }
-
-    struct TreeOptions {
-        let maxDepth: Int
-        let visibleOnly: Bool
-
-        init(_ args: [String: Any]) {
-            maxDepth = args["depth"] as? Int ?? 64
-            visibleOnly = args["all"] as? Bool != true
-        }
-    }
-
-    private static func describe(_ view: UIView, in window: UIWindow, path: String, depth: Int,
-                                 options: TreeOptions) -> [String: Any]? {
-        if options.visibleOnly && !isVisible(view, in: window) {
-            return nil
-        }
-        var node = summary(of: view, in: window)
-        node["path"] = path
-        if depth < options.maxDepth {
-            let children = view.subviews.enumerated().compactMap { index, child in
-                describe(child, in: window, path: "\(path).\(index)", depth: depth + 1, options: options)
-            }
-            if !children.isEmpty {
-                node["children"] = children
-            }
-        }
-        return node
-    }
-
-    private static func walk(_ view: UIView, in window: UIWindow, path: String,
-                             _ visit: (UIView, String) -> Void) {
-        guard isVisible(view, in: window) else { return }
-        visit(view, path)
-        for (index, child) in view.subviews.enumerated() {
-            walk(child, in: window, path: "\(path).\(index)", visit)
-        }
-    }
-
-    static func isVisible(_ view: UIView, in window: UIWindow) -> Bool {
-        !view.isHidden && view.alpha > 0.01 && window.bounds.intersects(view.convert(view.bounds, to: window))
-    }
-
-    static func summary(of view: UIView, in window: UIWindow) -> [String: Any] {
-        let frame = view.convert(view.bounds, to: window)
-        var element: [String: Any] = [
-            "class": String(describing: type(of: view)),
-            "frame": [frame.minX, frame.minY, frame.width, frame.height].map { Double($0) },
-            "center": [frame.midX, frame.midY].map { Double($0) },
-            "interactive": view.isUserInteractionEnabled
-        ]
-        if let text = text(of: view), !text.isEmpty {
-            element["text"] = text
-        }
-        if let label = view.accessibilityLabel, !label.isEmpty {
-            element["label"] = label
-        }
-        if let identifier = view.accessibilityIdentifier, !identifier.isEmpty {
-            element["identifier"] = identifier
-        }
-        if let control = view as? UIControl {
-            element["enabled"] = control.isEnabled
-            element["selected"] = control.isSelected
-        }
-        if view.isFirstResponder {
-            element["focused"] = true
-        }
-        return element
-    }
-
-    static func text(of view: UIView) -> String? {
-        switch view {
-        case let label as UILabel:
-            return label.text
-        case let button as UIButton:
-            return button.currentTitle ?? button.titleLabel?.text
-        case let field as UITextField:
-            return field.text?.isEmpty == false ? field.text : field.placeholder
-        case let textView as UITextView:
-            return textView.text
-        default:
-            return nil
-        }
     }
 
     // MARK: - Input
@@ -188,17 +106,17 @@ enum AutomationCommands {
             throw AutomationError("Give \(xKey) and \(yKey), or text, label, identifier, class or path")
         }
         let window = try mainWindow()
-        var matches: [UIView] = []
-        walk(window, in: window, path: "0") { view, path in
-            if query.matches(view, in: window, path: path) {
-                matches.append(view)
+        var matches: [[String: Any]] = []
+        AutomationTree.walk(window, in: window, path: "0") { summary in
+            if query.matches(summary) {
+                matches.append(summary)
             }
         }
-        guard let view = matches.first(where: { $0.isUserInteractionEnabled }) ?? matches.first else {
+        guard let match = matches.first(where: { $0["interactive"] as? Bool == true }) ?? matches.first,
+              let center = match["center"] as? [Double], center.count == 2 else {
             throw AutomationError("No visible element matches \(query)")
         }
-        let frame = view.convert(view.bounds, to: window)
-        return CGPoint(x: frame.midX, y: frame.midY)
+        return CGPoint(x: center[0], y: center[1])
     }
 
     private static func tap(_ args: [String: Any], hold: Double = 0.05, reply: @escaping Reply) throws {
@@ -306,61 +224,6 @@ private final class FakeTouch {
     private func send(_ point: CGPoint, _ phase: UITouch.Phase) {
         let result = PTFakeMetaTouch.fakeTouchId(touchID ?? -1, at: point, with: phase, in: window, on: view)
         touchID = result < 0 ? nil : result
-    }
-}
-
-/// Matches elements by any of text, label, identifier (case-insensitive substrings, or whole when exact) and class
-struct ElementQuery: CustomStringConvertible {
-    let text: String?
-    let label: String?
-    let identifier: String?
-    let className: String?
-    let path: String?
-    let exact: Bool
-
-    init(_ args: [String: Any]) {
-        text = args["text"] as? String
-        label = args["label"] as? String
-        identifier = args["identifier"] as? String
-        className = args["class"] as? String
-        path = args["path"] as? String
-        exact = args["exact"] as? Bool ?? false
-    }
-
-    var isEmpty: Bool {
-        [text, label, identifier, className, path].allSatisfy { $0 == nil }
-    }
-
-    var description: String {
-        [("text", text), ("label", label), ("identifier", identifier), ("class", className), ("path", path)]
-            .compactMap { name, value in value.map { "\(name) '\($0)'" } }
-            .joined(separator: ", ")
-    }
-
-    func matches(_ view: UIView, in window: UIWindow, path viewPath: String? = nil) -> Bool {
-        guard !isEmpty else { return false }
-        if let path = path, path != viewPath {
-            return false
-        }
-        if let className = className, !compare(String(describing: type(of: view)), className) {
-            return false
-        }
-        if let identifier = identifier, !compare(view.accessibilityIdentifier, identifier) {
-            return false
-        }
-        if let label = label, !compare(view.accessibilityLabel, label) {
-            return false
-        }
-        if let text = text,
-           !compare(AutomationCommands.text(of: view), text), !compare(view.accessibilityLabel, text) {
-            return false
-        }
-        return true
-    }
-
-    private func compare(_ value: String?, _ wanted: String) -> Bool {
-        guard let value = value else { return false }
-        return exact ? value == wanted : value.localizedCaseInsensitiveContains(wanted)
     }
 }
 
