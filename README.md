@@ -173,9 +173,9 @@ However, If you modified `AKInerface` or added localization strings, the tempora
 #!/bin/sh
 BUILD_PATH=~/Library/Developer/Xcode/DerivedData/PlayTools-<YOUR-UUID>/Build/Products/Debug-iphoneos
 
-cp "$BUILD_PATH/PlayTools.framework/PlugIns/AKInterface.bundle" "~/Library/Containers/io.playcover.PlayCover/Applications/<YOUR-GAME-NAME>.app/PlugIns"
+cp "$BUILD_PATH/PlayTools.framework/PlugIns/AKInterface.bundle" "$HOME/Library/Application Support/io.playcover.PlayCover/Applications/<YOUR-GAME-NAME>.app/PlugIns"
 
-cp "$BUILD_PATH/PlayTools.framework/*.lproj" "~/Library/Containers/io.playcover.PlayCover/Applications/<YOUR-GAME-NAME>.app/"
+cp "$BUILD_PATH/PlayTools.framework/*.lproj" "$HOME/Library/Application Support/io.playcover.PlayCover/Applications/<YOUR-GAME-NAME>.app/"
 ```
 This will be overwritten when you launch the game through PlayCover. You can launch the game from Finder to avoid this.
 
