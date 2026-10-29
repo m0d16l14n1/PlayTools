@@ -171,7 +171,14 @@ enum AutomationCommands {
 
     private static func typeText(_ args: [String: Any]) throws -> [String: Any] {
         guard let text = args["text"] as? String else { throw AutomationError("Give text") }
-        try keyInput().insertText(text)
+        let input = try keyInput()
+        // Replace what the field holds, through the text input API so the app sees an ordinary edit
+        if args["replace"] as? Bool == true, let textInput = input as? UITextInput,
+           let all = textInput.textRange(from: textInput.beginningOfDocument, to: textInput.endOfDocument) {
+            textInput.replace(all, withText: text)
+        } else {
+            input.insertText(text)
+        }
         return ["ok": true]
     }
 
