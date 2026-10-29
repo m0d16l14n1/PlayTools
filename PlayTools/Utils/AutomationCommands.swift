@@ -18,8 +18,8 @@ enum AutomationCommands {
         "tap": { args, reply in try tap(args, reply: reply) },
         "longpress": { args, reply in try tap(args, hold: args["duration"] as? Double ?? 1, reply: reply) },
         "swipe": { args, reply in try swipe(args, reply: reply) },
-        "type": { args, reply in reply(try typeText(args)) },
-        "key": { args, reply in reply(try key(args)) },
+        "type": { args, reply in whenFocused(reply) { reply(try typeText(args)) } },
+        "key": { args, reply in whenFocused(reply) { reply(try key(args)) } },
         "screenshot": { args, reply in reply(try screenshot(args)) }
     ]
 
@@ -124,7 +124,10 @@ enum AutomationCommands {
         let touch = try FakeTouch(at: target)
         DispatchQueue.main.asyncAfter(deadline: .now() + hold) {
             touch.end(at: target)
-            reply(["ok": true, "x": Double(target.x), "y": Double(target.y)])
+            // Let the app react (focus a field, start a transition) before the next command looks at it
+            DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay) {
+                reply(["ok": true, "x": Double(target.x), "y": Double(target.y)])
+            }
         }
     }
 
@@ -140,11 +143,29 @@ enum AutomationCommands {
             DispatchQueue.main.asyncAfter(deadline: .now() + duration * Double(progress)) {
                 if step == steps {
                     touch.end(at: current)
-                    reply(["ok": true])
+                    DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay) { reply(["ok": true]) }
                 } else {
                     touch.move(to: current)
                 }
             }
+        }
+    }
+
+    private static let settleDelay = 0.15
+
+    /// Runs `action` once a text field has focus, waiting up to a second for one that a tap just focused
+    private static func whenFocused(_ reply: @escaping Reply, attempt: Int = 0,
+                                    _ action: @escaping () throws -> Void) {
+        if (try? keyInput()) == nil && attempt < 10 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                whenFocused(reply, attempt: attempt + 1, action)
+            }
+            return
+        }
+        do {
+            try action()
+        } catch {
+            reply(failure("\(error)"))
         }
     }
 
