@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		537C0C91C9BA429B9755CD67 /* AutomationCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E8A1AA2AF04F7E886A002A /* AutomationCommands.swift */; };
+		E0434F1401ED498E8D088C3B /* AutomationServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73949E366CCE481189A44622 /* AutomationServer.swift */; };
 		2847AE48298EFC0F00B0F983 /* PlayScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2847AE47298EFC0F00B0F983 /* PlayScreen.swift */; };
 		6E76639B28D0FAE700DE4AF9 /* Plugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E76639A28D0FAE700DE4AF9 /* Plugin.swift */; };
 		6E76639C28D0FAE700DE4AF9 /* Plugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E76639A28D0FAE700DE4AF9 /* Plugin.swift */; };
@@ -105,6 +107,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		56E8A1AA2AF04F7E886A002A /* AutomationCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationCommands.swift; sourceTree = "<group>"; };
+		73949E366CCE481189A44622 /* AutomationServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationServer.swift; sourceTree = "<group>"; };
 		2847AE47298EFC0F00B0F983 /* PlayScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayScreen.swift; sourceTree = "<group>"; };
 		6E76639628D0FA6200DE4AF9 /* AKInterface-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AKInterface-Bridging-Header.h"; sourceTree = "<group>"; };
 		6E76639A28D0FAE700DE4AF9 /* Plugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugin.swift; sourceTree = "<group>"; };
@@ -483,6 +487,8 @@
 			isa = PBXGroup;
 			children = (
 				AA719797287A481500623C15 /* PlayInfo.swift */,
+				56E8A1AA2AF04F7E886A002A /* AutomationCommands.swift */,
+				73949E366CCE481189A44622 /* AutomationServer.swift */,
 				AA719798287A481500623C15 /* Toast.swift */,
 				6E7663A428D0FEBE00DE4AF9 /* AKPluginLoader.swift */,
 				65F0487A0C752EE4930AF0AB /* UserPluginLoader.swift */,
@@ -771,6 +777,8 @@
 				9562D1582AB4FB9B002C329D /* TouchscreenKeyboardEventAdapter.swift in Sources */,
 				9555ED312C058E28006E469C /* DebugModel.swift in Sources */,
 				AA7197A9287A481500623C15 /* PlayInfo.swift in Sources */,
+				537C0C91C9BA429B9755CD67 /* AutomationCommands.swift in Sources */,
+				E0434F1401ED498E8D088C3B /* AutomationServer.swift in Sources */,
 				AA71986A287A81A000623C15 /* PTFakeMetaTouch.m in Sources */,
 				9562D15E2AB4FCB8002C329D /* TouchscreenControllerEventAdapter.swift in Sources */,
 				954389C62B3896E600B063BB /* ChildButton.swift in Sources */,
