@@ -158,7 +158,14 @@ enum AutomationCommands {
         let input = try keyInput()
         switch args["key"] as? String ?? "" {
         case "return", "enter":
-            input.insertText("\n")
+            // A text field reacts to the Return key, not to an inserted newline: do what the keyboard does
+            if let field = input as? UITextField {
+                if field.delegate?.textFieldShouldReturn?(field) ?? true {
+                    field.sendActions(for: .editingDidEndOnExit)
+                }
+            } else {
+                input.insertText("\n")
+            }
         case "tab":
             input.insertText("\t")
         case "delete", "backspace":
