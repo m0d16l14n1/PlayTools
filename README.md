@@ -56,6 +56,43 @@ PlayChain is a tool that solves key chain issues by replacing the game's key cha
 
 Some games only work under debug environment. By inserting the Introspection Library, PlayTools tricks the game into thinking it is running under debug environment.
 
+## Automation
+
+With the app's *Allow automation* setting on (`automation` in its PlayCover settings, or `PLAYTOOLS_AUTOMATION=1` in
+its environment), PlayTools starts a server inside the app that `playcover automate` uses to inspect and drive it
+([PlayCover CLI docs](https://github.com/m0d16l14n1/PlayCover/blob/feature/cli-new-devices-tahoe-27/docs/CLI.md#automate)).
+Code: `PlayTools/Utils/AutomationServer.swift`, `AutomationCommands.swift`, `AutomationTree.swift`.
+
+It listens on `127.0.0.1`, on a random port, and writes `{"bundleIdentifier", "pid", "port", "token", "protocol": 1}`
+to `~/Library/Containers/io.playcover.PlayCover/Automation/<bundle id>.json` (mode 600, removed when the app quits).
+Each request is one line of JSON, answered by one line of JSON:
+
+```
+→ {"token": "<token>", "command": "tap", "args": {"text": "Start"}}
+← {"ok": true, "x": 512, "y": 300}
+← {"ok": false, "error": "No visible element matches text 'Start'"}
+```
+
+| Command | Arguments | Answer |
+| --- | --- | --- |
+| `info` | | `bundleIdentifier`, `pid`, `device`, `windows`, `window` (`width`, `height`, `scale`, `number`), `focused` |
+| `tree` | `depth`, `all` | `root`: nodes with `path`, `class`, `frame` [x, y, w, h], `center`, `interactive`, and when present `text`, `label`, `value`, `identifier`, `traits`, `enabled`, `selected`, `focused`, `children` |
+| `find` | query | `matches`: nodes as in `tree`, without children |
+| `tap` | `x`, `y` or a query | `x`, `y` tapped |
+| `longpress` | as `tap`, plus `duration` (s) | as `tap` |
+| `swipe` | `x1`, `y1`, `x2`, `y2` (or queries), `duration` | |
+| `type` | `text`, `replace` | |
+| `key` | `key`: `return`, `tab` or `delete` | |
+| `screenshot` | `scale` | `png` (base64), `width`, `height` |
+
+A query is any of `text` (a view's text or an element's accessibility label or value), `label`, `identifier`, `class`,
+`path`, with `exact` for whole-string matches. Coordinates are points in the key window. Nodes are the window's views
+plus the accessibility elements that are not views (SwiftUI, web content, custom controls), at paths like `0.2.a1`.
+Touches are sent through `PTFakeMetaTouch`, like keymapping.
+
+The flag is read on its own rather than as part of `AppSettingsData`, whose synthesized decoding would fail as a whole
+on a settings file without the key.
+
 # How to Use
 
 PlayTools is shipped with PlayCover, and is installed together with the game. You do not need to install PlayTools manually.
