@@ -11,18 +11,6 @@ class PlayInfo: NSObject {
             .urlForApplicationWithBundleIdentifier("io.playcover.PlayCover") != nil
     }
 
-    /// PlayCover's library, where this app's settings, keymaps and PlayChain live. PlayCover moved it out of
-    /// ~/Library/Containers/io.playcover.PlayCover, a protected app container that made macOS ask whether the app may
-    /// "access data from other apps". An older PlayCover still uses the container. The real home folder is spelled
-    /// out because NSHomeDirectory() is the app's own sandbox container.
-    static let playCoverLibrary: URL = {
-        let home = URL(fileURLWithPath: "/Users/\(NSUserName())")
-        let library = home.appendingPathComponent("Library/Application Support/io.playcover.PlayCover")
-        let legacy = home.appendingPathComponent("Library/Containers/io.playcover.PlayCover")
-        return FileManager.default.fileExists(atPath: library.appendingPathComponent("App Settings").path)
-            ? library : legacy
-    }()
-
     @objc static var isUnrealEngine: Bool {
         let appFolder = Bundle.main.bundleURL
         let ueFiles: [URL] = [
