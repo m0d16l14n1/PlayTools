@@ -116,11 +116,19 @@ enum AutomationTree {
         if let value = object.accessibilityValue, !value.isEmpty {
             node["value"] = value
         }
-        if let identifier = (object as? UIAccessibilityIdentification)?.accessibilityIdentifier,
-           !identifier.isEmpty {
+        if let identifier = identifier(of: object), !identifier.isEmpty {
             node["identifier"] = identifier
         }
         return node
+    }
+
+    /// accessibilityIdentifier, which a cast to UIAccessibilityIdentification does not reach for every object
+    private static func identifier(of object: NSObject) -> String? {
+        if let view = object as? UIView {
+            return view.accessibilityIdentifier
+        }
+        guard object.responds(to: NSSelectorFromString("accessibilityIdentifier")) else { return nil }
+        return object.value(forKey: "accessibilityIdentifier") as? String
     }
 
     static func text(of view: UIView) -> String? {
