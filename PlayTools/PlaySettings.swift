@@ -11,7 +11,7 @@ let settings = PlaySettings.shared
     var settingsData: AppSettingsData
 
     override init() {
-        settingsUrl = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Containers/io.playcover.PlayCover")
+        settingsUrl = PlayInfo.playCoverLibrary
             .appendingPathComponent("App Settings")
             .appendingPathComponent("\(bundleIdentifier).plist")
         do {
